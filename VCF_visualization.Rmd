@@ -1,0 +1,87 @@
+---
+title: "small_genome_example"
+author: "Zhexin Pu"
+date: "2022/4/12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load the example data
+pinfsc50 is an example data
+```{r}
+pkg <- "pinfsc50"
+vcf_file <- system.file("extdata", "pinf_sc50.vcf.gz", package = pkg)
+dna_file <- system.file("extdata", "pinf_sc50.fasta", package = pkg)
+gff_file <- system.file("extdata", "pinf_sc50.gff", package = pkg)
+```
+
+Load your own data
+
+```{r}
+#vcf <- read.vcfR("Your_data_path", verbose = FALSE )
+##library(adegenet)
+#dna = fasta2DNAbin("Your_data_patha",chunkSize=2)
+#gff<-read.table("Your_data_path",sep="\t",quote="")
+```
+
+```{r}
+library(vcfR)
+vcf <- read.vcfR(vcf_file, verbose = FALSE)
+dna <- ape::read.dna(dna_file, format = "fasta")
+gff <- read.table(gff_file, sep="\t", quote="")
+```
+
+```{r}
+chrom <- create.chromR(name='Supercontig', vcf=vcf, seq=dna, ann=gff)
+```
+
+```{r}
+plot(chrom)
+```
+
+## 1. Use the masker() function to try to filter out data that we do not have high confidence in
+## The parameter of mask could be adjusted by user, for example the min_DP, max_DP and others
+```{r}
+chrom <- masker(chrom, min_QUAL = 1, min_DP = 300, max_DP = 700, min_MQ = 59.9,  max_MQ = 60.1)
+plot(chrom)
+```
+
+
+```{r}
+chrom <- proc.chromR(chrom, verbose=TRUE)
+```
+
+```{r}
+plot(chrom)
+```
+
+```{r}
+chromoqc(chrom, dp.alpha=20)
+```
+
+## 2.Genotype visualization
+```{r}
+vcf
+```
+
+
+```{r}
+dp <- extract.gt(chrom, element = "DP", as.numeric=TRUE)
+rownames(dp) <- 1:nrow(dp)
+head(dp)
+```
+# Heatmap for DP
+```{r}
+heatmap.bp(dp[1001:1500,])
+```
+
+#Barplot for DP
+```{r}
+par(mar=c(8,4,4,2))
+barplot(apply(dp, MARGIN=2,mean,na.rm=TRUE), las=3)
+```
+
